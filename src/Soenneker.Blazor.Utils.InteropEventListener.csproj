@@ -45,6 +45,6 @@
         <PackageReference Include="Soenneker.Blazor.Utils.BlazorInvoker" Version="2.1.65" />
         <PackageReference Include="Soenneker.Blazor.Utils.BlazorOutputInvoker" Version="2.1.64" />
         <PackageReference Include="Soenneker.Blazor.Utils.EventListeningInterop" Version="2.1.66" />
-        <PackageReference Include="Soenneker.Extensions.Object" Version="2.1.608" />
+        <PackageReference Include="Soenneker.Extensions.Object" Version="2.1.614" />
     </ItemGroup>
 </Project>
