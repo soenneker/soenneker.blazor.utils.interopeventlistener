@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Soenneker.Blazor.Utils.InteropEventListener.Abstract;
 using Soenneker.Tests.FixturedUnit;
 using Xunit;
@@ -15,5 +13,11 @@ public class InteropEventListenerTests : FixturedUnitTest
     public InteropEventListenerTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
     {
         _util = Resolve<IInteropEventListener>(true);
+    }
+
+    [Fact]
+    public void Default()
+    {
+
     }
 }

@@ -12,8 +12,10 @@ public static class InteropEventListenerRegistrar
     /// <summary>
     /// Adds <see cref="IInteropEventListener"/> as a scoped service. <para/>
     /// </summary>
-    public static void AddInteropEventListener(this IServiceCollection services)
+    public static IServiceCollection AddInteropEventListenerAsScoped(this IServiceCollection services)
     {
         services.TryAddScoped<IInteropEventListener, InteropEventListener>();
+
+        return services;
     }
 }
