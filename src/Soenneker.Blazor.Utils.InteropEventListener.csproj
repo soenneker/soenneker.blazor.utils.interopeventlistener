@@ -14,7 +14,7 @@
         <AssemblyName>Soenneker.Blazor.Utils.InteropEventListener</AssemblyName>
         <PackageId>Soenneker.Blazor.Utils.InteropEventListener</PackageId>
         <PackageTags>blazor utils interopeventlistener event listening interop javascript invoke util csharp dotnet c# .net</PackageTags>
-        <Copyright>Copyright © 2024 Jake Soenneker</Copyright>
+        <Copyright>Copyright © 2024-2025 Jake Soenneker</Copyright>
         <Authors>Jake Soenneker</Authors>
         <Company>https://soenneker.com</Company>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
