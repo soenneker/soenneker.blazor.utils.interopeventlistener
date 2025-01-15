@@ -43,7 +43,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1" />
         <PackageReference Include="Soenneker.Blazor.Utils.BlazorInvoker" Version="3.0.778" />
         <PackageReference Include="Soenneker.Blazor.Utils.BlazorOutputInvoker" Version="3.0.767" />
-        <PackageReference Include="Soenneker.Blazor.Utils.EventListeningInterop" Version="3.0.801" />
+        <PackageReference Include="Soenneker.Blazor.Utils.EventListeningInterop" Version="3.0.802" />
         <PackageReference Include="Soenneker.Extensions.Object" Version="3.0.2974" />
     </ItemGroup>
 </Project>
