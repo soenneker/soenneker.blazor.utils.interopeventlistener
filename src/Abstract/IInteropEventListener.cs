@@ -28,7 +28,7 @@ public interface IInteropEventListener : IDisposable, IAsyncDisposable
     /// <remarks>
     /// If the event listener is already added for the specified element and event, this method returns a completed task without re-registering.
     /// </remarks>
-    ValueTask Add<T>(string functionName, string elementId, string eventName, Func<T, CancellationToken, ValueTask> callback, CancellationToken cancellationToken = default);
+    ValueTask Add<T>(string functionName, string elementId, string eventName, Func<T, ValueTask> callback, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds an event listener for a specified Blazor interop event.
@@ -43,7 +43,7 @@ public interface IInteropEventListener : IDisposable, IAsyncDisposable
     /// <remarks>
     /// If the event listener is already added for the specified element and event, this method returns a completed task without re-registering.
     /// </remarks>
-    ValueTask Add<TInput, TOutput>(string functionName, string elementId, string eventName, Func<TInput, CancellationToken, ValueTask<TOutput>> callback, CancellationToken cancellationToken = default);
+    ValueTask Add<TInput, TOutput>(string functionName, string elementId, string eventName, Func<TInput, ValueTask<TOutput>> callback, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes an event listener from a specified HTML element by name.

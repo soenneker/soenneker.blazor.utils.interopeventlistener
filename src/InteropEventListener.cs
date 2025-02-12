@@ -30,7 +30,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         _interop ??= eventListeningInterop;
     }
 
-    public ValueTask Add<T>(string functionName, string elementId, string eventName, Func<T, CancellationToken, ValueTask> callback, CancellationToken cancellationToken = default)
+    public ValueTask Add<T>(string functionName, string elementId, string eventName, Func<T, ValueTask> callback, CancellationToken cancellationToken = default)
     {
         eventName.ThrowIfNullOrEmpty();
         _interop.ThrowIfNull();
@@ -52,7 +52,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         return _interop!.AddEventListener(functionName, elementId, eventName, dotNetObject, cancellationToken);
     }
 
-    public ValueTask Add<TInput, TOutput>(string functionName, string elementId, string eventName, Func<TInput, CancellationToken, ValueTask<TOutput>> callback, CancellationToken cancellationToken = default)
+    public ValueTask Add<TInput, TOutput>(string functionName, string elementId, string eventName, Func<TInput, ValueTask<TOutput>> callback, CancellationToken cancellationToken = default)
     {
         eventName.ThrowIfNullOrEmpty();
         _interop.ThrowIfNull();
