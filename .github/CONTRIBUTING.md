@@ -1,4 +1,4 @@
-# Contributing to Soenneker.Blazor.Utils.InteropEventListener
+﻿# Contributing to Soenneker.Blazor.Utils.InteropEventListener
 
 We're excited that you're interested in contributing!
 
