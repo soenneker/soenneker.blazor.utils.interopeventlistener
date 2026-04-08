@@ -6,9 +6,9 @@ using Soenneker.Blazor.Utils.EventListeningInterop.Abstract;
 namespace Soenneker.Blazor.Utils.InteropEventListener.Abstract;
 
 /// <summary>
-/// Manages the registration, removal, and disposal of .NET object references used for interop event listeners. Handles warnings for potential duplicate registrations and providing methods for cleanup. The class is equipped with asynchronous and synchronous disposal mechanisms, as well as methods for adding event listeners with generic callback functions.
+/// Manages the registration, removal, and disposal of .NET object references used for interop event listeners. Handles warnings for potential duplicate registrations and providing methods for cleanup. The class is equipped with asynchronous disposal as well as methods for adding event listeners with generic callback functions.
 /// </summary>
-public interface IInteropEventListener : IDisposable, IAsyncDisposable
+public interface IInteropEventListener : IAsyncDisposable
 {
     /// <summary>
     /// Initializes a component with the specified interop implementation.

@@ -119,7 +119,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         _keysToRemove.Clear();
     }
 
-    public void Dispose()
+    public ValueTask DisposeAsync()
     {
         foreach ((_, IDisposable v) in _dotNetObjectDict)
         {
@@ -128,11 +128,6 @@ internal sealed class InteropEventListener : IInteropEventListener
 
         _dotNetObjectDict.Clear();
         _keysToRemove.Clear();
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        Dispose();
         return ValueTask.CompletedTask;
     }
 }
