@@ -1,21 +1,19 @@
 using Soenneker.Blazor.Utils.InteropEventListener.Abstract;
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
-
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Blazor.Utils.InteropEventListener.Tests;
 
-[Collection("Collection")]
-public class InteropEventListenerTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class InteropEventListenerTests : HostedUnitTest
 {
     private readonly IInteropEventListener _util;
 
-    public InteropEventListenerTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public InteropEventListenerTests(Host host) : base(host)
     {
         _util = Resolve<IInteropEventListener>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
