@@ -20,11 +20,12 @@ public interface IInteropEventListener : IAsyncDisposable
     /// Adds an event listener to a specified HTML element.
     /// </summary>
     /// <typeparam name="T">The type of the event arguments.</typeparam>
-    /// <param name="functionName"></param>
+    /// <param name="functionName">Name of the function to invoke.</param>
     /// <param name="elementId">The ID of the HTML element to which the event listener is added.</param>
-    /// <param name="eventName">The name of the event to listen for.</param>
+    /// <param name="eventName">Name of the event to publish or subscribe to.</param>
     /// <param name="callback">The callback function to execute when the event occurs.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the event listener registration.</param>
+    /// <returns>A task that completes when the add operation is complete.</returns>
     /// <remarks>
     /// If the event listener is already added for the specified element and event, this method returns a completed task without re-registering.
     /// </remarks>
@@ -37,9 +38,10 @@ public interface IInteropEventListener : IAsyncDisposable
     /// <typeparam name="TOutput">The type of the output result for the event listener callback.</typeparam>
     /// <param name="functionName">The name of the JavaScript function to listen for.</param>
     /// <param name="elementId">The identifier of the HTML element to attach the event listener to.</param>
-    /// <param name="eventName">The name of the event to listen for.</param>
+    /// <param name="eventName">Name of the event to publish or subscribe to.</param>
     /// <param name="callback">The callback function to be invoked when the event occurs.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the event listener registration.</param>
+    /// <returns>A task that completes when the add operation is complete.</returns>
     /// <remarks>
     /// If the event listener is already added for the specified element and event, this method returns a completed task without re-registering.
     /// </remarks>
