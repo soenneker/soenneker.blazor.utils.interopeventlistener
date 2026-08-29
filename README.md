@@ -5,46 +5,92 @@
 
 # Soenneker.Blazor.Utils.InteropEventListener
 
-Manages the registration, removal, and disposal of .NET object references used for interop event listeners. Handles warnings for potential duplicate registrations and providing methods for cleanup. The class is equipped with asynchronous disposal as well as methods for adding event listeners with generic callback functions.
+Owns the `DotNetObjectReference` callbacks used by one Blazor JavaScript event-listening interop instance.
 
-## Install
+It creates callback wrappers for one-way and request/response events, suppresses duplicate registrations by element ID and event name, rolls back failed registrations, and disposes callback references during cleanup. JavaScript listener attachment and removal remain the consuming interop’s responsibility.
+
+## Installation
 
 ```bash
 dotnet add package Soenneker.Blazor.Utils.InteropEventListener
 ```
 
-## Quick start
+Register a transient manager because each instance contains listener state and binds to one interop object:
 
 ```csharp
 using Soenneker.Blazor.Utils.InteropEventListener.Registrars;
-using Microsoft.Extensions.DependencyInjection;
 
-var services = new ServiceCollection();
-var result = services.AddInteropEventListenerAsScoped();
+builder.Services.AddInteropEventListenerAsTransient();
 ```
 
-Adds `IInteropEventListener` as a scoped service.
+Inject `IInteropEventListener` into the component that owns the corresponding JavaScript widget or element.
 
-## What you get
+## Initialize and add a callback
 
-- `IInteropEventListener` — Manages the registration, removal, and disposal of .NET object references used for interop event listeners. Handles warnings for potential duplicate registrations and providing methods for cleanup. The class is equipped with asynchronous disposal as well as methods for adding event listeners with generic callback functions.
-- `InteropEventListenerRegistrar` — Manages the registration, removal, and disposal of .NET object references used for interop event listeners.
+Call `Initialize` once with an `IEventListeningInterop` implementation, then register callbacks after the element exists:
 
-## API at a glance
+```csharp
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (!firstRender)
+        return;
 
-| API | What it does | Result / important behavior |
-| --- | --- | --- |
-| `IInteropEventListener.Initialize(eventListeningInterop)` | Initializes a component with the specified interop implementation. | Returns no value; the requested change is complete when the method returns. |
-| `IInteropEventListener.Add(functionName, elementId, eventName, callback, cancellationToken)` | Adds an event listener to a specified HTML element. | A task that completes when the add operation is complete. |
-| `IInteropEventListener.Remove(elementId, eventName)` | Removes an event listener from a specified HTML element by name. | Returns no value; the requested change is complete when the method returns. |
-| `IInteropEventListener.DisposeForElement(elementId)` | Should be called whenever the component that has registered events is disposed. | Returns no value; the requested change is complete when the method returns. |
-| `InteropEventListenerRegistrar.AddInteropEventListenerAsScoped(services)` | Adds `IInteropEventListener` as a scoped service. | The same service collection, so additional registrations can be chained. |
+    EventListener.Initialize(WidgetInterop);
 
-## Important behavior
+    await EventListener.Add<WidgetChange>(
+        "widgetInterop.addEventListener",
+        _elementId,
+        "change",
+        change => HandleChange(change));
+}
 
-- `IInteropEventListener.Add(functionName, elementId, eventName, callback, cancellationToken)`: If the event listener is already added for the specified element and event, this method returns a completed task without re-registering.
+private ValueTask HandleChange(WidgetChange change)
+{
+    // Validate browser-provided data before using it.
+    return ValueTask.CompletedTask;
+}
+```
 
-## Practical notes
+The supplied interop receives the function name, element ID, event name, and a managed callback reference. Its JavaScript registration function must retain and invoke that reference using the method expected by the Soenneker Blazor invoker.
 
-- Cancellation stops pending work; it does not undo work that has already completed.
-- Dispose instances you own when their scope ends so held resources can be released.
+An instance cannot be rebound to a different interop object. Resolve a separate transient manager for each independent component or interop owner.
+
+## Callbacks that return a value
+
+Use the two-type overload when JavaScript needs a result from .NET:
+
+```csharp
+await EventListener.Add<ValidationRequest, ValidationResult>(
+    "widgetInterop.addValidator",
+    _elementId,
+    "validate",
+    request => Validate(request));
+```
+
+Registration identity is the ordinal pair `(elementId, eventName)`. A second registration for the same pair is skipped and logged as a warning, even if its function name or callback differs.
+
+If JavaScript registration throws or is cancelled, the newly created .NET reference is removed and disposed so the same pair can be retried.
+
+## Cleanup order
+
+`Remove` and `DisposeForElement` release .NET callback references; they cannot remove a DOM listener because this package has no JavaScript removal-function contract.
+
+Use this order when an element or widget is torn down:
+
+```csharp
+await WidgetInterop.RemoveEventListener(_elementId, "change");
+EventListener.Remove(_elementId, "change");
+```
+
+Or destroy the JavaScript widget so it can no longer invoke callbacks, then release every callback for the element:
+
+```csharp
+await WidgetInterop.Destroy(_elementId);
+EventListener.DisposeForElement(_elementId);
+```
+
+Never dispose a callback reference while JavaScript can still invoke it. Doing so leaves a live browser listener pointing at an invalid .NET object.
+
+The DI container eventually disposes transient instances it created, but component cleanup should release JavaScript listeners and callback references as soon as their owner is removed. Cancellation only affects pending registration; it does not unregister a listener that JavaScript already attached.
+
+Treat event payloads as untrusted browser input. Validate them before using them for authorization, file access, navigation, or other privileged behavior.

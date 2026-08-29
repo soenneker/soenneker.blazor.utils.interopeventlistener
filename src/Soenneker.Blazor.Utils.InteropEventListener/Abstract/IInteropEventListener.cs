@@ -6,14 +6,15 @@ using Soenneker.Blazor.Utils.EventListeningInterop.Abstract;
 namespace Soenneker.Blazor.Utils.InteropEventListener.Abstract;
 
 /// <summary>
-/// Manages the registration, removal, and disposal of .NET object references used for interop event listeners. Handles warnings for potential duplicate registrations and providing methods for cleanup. The class is equipped with asynchronous disposal as well as methods for adding event listeners with generic callback functions.
+/// Owns the .NET callback references used by one JavaScript event-listening interop instance.
 /// </summary>
 public interface IInteropEventListener : IAsyncDisposable
 {
     /// <summary>
-    /// Initializes a component with the specified interop implementation.
+    /// Binds this manager to the interop implementation that registers its listeners.
     /// </summary>
     /// <param name="eventListeningInterop">The interop implementation used for communication with JavaScript.</param>
+    /// <remarks>An instance can be initialized repeatedly with the same object, but cannot be rebound to a different interop instance.</remarks>
     void Initialize(IEventListeningInterop eventListeningInterop);
 
     /// <summary>
@@ -48,15 +49,17 @@ public interface IInteropEventListener : IAsyncDisposable
     ValueTask Add<TInput, TOutput>(string functionName, string elementId, string eventName, Func<TInput, ValueTask<TOutput>> callback, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes an event listener from a specified HTML element by name.
+    /// Disposes and removes the .NET callback reference for an element and event.
     /// </summary>
     /// <param name="elementId">The ID of the HTML element from which the event listener is removed.</param>
-    /// <param name="eventName">The name of the event for which the listener should be removed.</param>
+    /// <param name="eventName">The name of the event whose callback reference should be removed.</param>
+    /// <remarks>The JavaScript listener must be removed before calling this method.</remarks>
     void Remove(string elementId, string eventName);
 
     /// <summary>
-    /// Should be called whenever the component that has registered events is disposed
+    /// Disposes all .NET callback references registered for an element.
     /// </summary>
-    /// <param name="elementId"></param>
+    /// <param name="elementId">The element whose callback references should be disposed.</param>
+    /// <remarks>The JavaScript listeners must be removed, or the owning widget destroyed, before calling this method.</remarks>
     void DisposeForElement(string elementId);
 }

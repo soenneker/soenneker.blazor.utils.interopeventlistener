@@ -10,14 +10,25 @@ namespace Soenneker.Blazor.Utils.InteropEventListener.Registrars;
 public static class InteropEventListenerRegistrar
 {
     /// <summary>
-    /// Adds <see cref="IInteropEventListener"/> as a scoped service. <para/>
+    /// Adds a new <see cref="IInteropEventListener"/> for each resolution.
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
+    public static IServiceCollection AddInteropEventListenerAsTransient(this IServiceCollection services)
+    {
+        services.TryAddTransient<IInteropEventListener, InteropEventListener>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds a new <see cref="IInteropEventListener"/> for each resolution.
+    /// </summary>
+    /// <remarks>This compatibility alias registers the manager as transient because its state cannot safely be shared for an entire Blazor scope.</remarks>
     /// <param name="services">Service collection that receives the registration.</param>
     /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddInteropEventListenerAsScoped(this IServiceCollection services)
     {
-        services.TryAddScoped<IInteropEventListener, InteropEventListener>();
-
-        return services;
+        return services.AddInteropEventListenerAsTransient();
     }
 }
