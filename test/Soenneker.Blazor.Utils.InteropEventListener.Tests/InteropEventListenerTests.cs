@@ -19,16 +19,16 @@ public class InteropEventListenerTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Failed_registration_can_be_retried()
+    public async Task Failed_registration_can_be_retried(CancellationToken cancellationToken)
     {
         var interop = new FailOnceInterop();
         _util.Initialize(interop);
 
-        Func<Task> firstAttempt = async () => await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask);
+        Func<Task> firstAttempt = async () => await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask, cancellationToken: cancellationToken);
 
         await firstAttempt.Should().ThrowAsync<InvalidOperationException>();
 
-        await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask);
+        await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask, cancellationToken: cancellationToken);
         interop.CallCount.Should().Be(2);
     }
 
