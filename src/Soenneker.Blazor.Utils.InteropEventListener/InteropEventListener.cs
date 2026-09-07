@@ -79,30 +79,30 @@ internal sealed class InteropEventListener : IInteropEventListener
     public void DisposeForElement(string elementId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(elementId);
-        List<IDisposable> references = [];
+        List<IDisposable>? references = null;
 
         lock (_sync)
         {
             if (_disposed)
                 return;
 
-            var keys = new List<InteropKey>();
 
             foreach ((InteropKey key, IDisposable disposable) in _dotNetObjectDict)
             {
                 if (StringComparer.Ordinal.Equals(key.ElementId, elementId))
                 {
-                    keys.Add(key);
-                    references.Add(disposable);
+                    (references ??= []).Add(disposable);
+                    _dotNetObjectDict.Remove(key);
                 }
             }
 
-            foreach (InteropKey key in keys)
-                _dotNetObjectDict.Remove(key);
         }
 
-        foreach (IDisposable reference in references)
-            reference.Dispose();
+        if (references is not null)
+        {
+            foreach (IDisposable reference in references)
+                reference.Dispose();
+        }
     }
 
     public ValueTask DisposeAsync()
@@ -136,7 +136,7 @@ internal sealed class InteropEventListener : IInteropEventListener
             ObjectDisposedException.ThrowIf(_disposed, this);
             interop = _interop ?? throw new InvalidOperationException("Initialize must be called before adding listeners.");
 
-            if (_dotNetObjectDict.ContainsKey(key))
+            if (!_dotNetObjectDict.TryAdd(key, dotNetObject))
             {
                 dotNetObject.Dispose();
 
@@ -150,7 +150,6 @@ internal sealed class InteropEventListener : IInteropEventListener
                 return;
             }
 
-            _dotNetObjectDict.Add(key, dotNetObject);
         }
 
         try
