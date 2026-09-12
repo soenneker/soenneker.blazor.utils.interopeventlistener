@@ -42,6 +42,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Soenneker.Asyncs.Locks" Version="4.0.79" />
         <PackageReference Include="Soenneker.Blazor.Utils.BlazorInvoker" Version="4.0.1055" />
         <PackageReference Include="Soenneker.Blazor.Utils.BlazorOutputInvoker" Version="4.0.1018" />
         <PackageReference Include="Soenneker.Blazor.Utils.EventListeningInterop" Version="4.0.1145" />

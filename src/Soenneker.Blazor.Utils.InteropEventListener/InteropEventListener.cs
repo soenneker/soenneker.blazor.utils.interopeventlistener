@@ -1,3 +1,4 @@
+using Soenneker.Asyncs.Locks;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -17,7 +18,7 @@ internal sealed class InteropEventListener : IInteropEventListener
 {
     // Avoid string key allocations by using a structured key.
     private readonly Dictionary<InteropKey, IDisposable> _dotNetObjectDict = new(InteropKeyComparer.Instance);
-    private readonly object _sync = new();
+    private readonly AsyncLock _sync = new();
 
     private IEventListeningInterop? _interop;
     private readonly ILogger<InteropEventListener> _logger;
@@ -32,7 +33,7 @@ internal sealed class InteropEventListener : IInteropEventListener
     {
         ArgumentNullException.ThrowIfNull(eventListeningInterop);
 
-        lock (_sync)
+        using (_sync.LockSync())
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -70,7 +71,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         var key = new InteropKey(elementId, eventName);
         IDisposable? value;
 
-        lock (_sync)
+        using (_sync.LockSync())
             _dotNetObjectDict.Remove(key, out value);
 
         value?.Dispose();
@@ -81,7 +82,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         ArgumentException.ThrowIfNullOrWhiteSpace(elementId);
         List<IDisposable>? references = null;
 
-        lock (_sync)
+        using (_sync.LockSync())
         {
             if (_disposed)
                 return;
@@ -105,14 +106,14 @@ internal sealed class InteropEventListener : IInteropEventListener
         }
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         List<IDisposable> references;
 
-        lock (_sync)
+        using (await _sync.Lock().ConfigureAwait(false))
         {
             if (_disposed)
-                return ValueTask.CompletedTask;
+                return;
 
             _disposed = true;
             references = [.. _dotNetObjectDict.Values];
@@ -121,8 +122,6 @@ internal sealed class InteropEventListener : IInteropEventListener
 
         foreach (IDisposable reference in references)
             reference.Dispose();
-
-        return ValueTask.CompletedTask;
     }
 
     private async ValueTask AddCore(string functionName, string elementId, string eventName, IDisposable dotNetObject,
@@ -131,7 +130,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         var key = new InteropKey(elementId, eventName);
         IEventListeningInterop interop;
 
-        lock (_sync)
+        using (await _sync.Lock().ConfigureAwait(false))
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             interop = _interop ?? throw new InvalidOperationException("Initialize must be called before adding listeners.");
@@ -160,7 +159,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         {
             bool removed;
 
-            lock (_sync)
+            using (await _sync.Lock().ConfigureAwait(false))
             {
                 removed = _dotNetObjectDict.TryGetValue(key, out IDisposable? current) && ReferenceEquals(current, dotNetObject);
 

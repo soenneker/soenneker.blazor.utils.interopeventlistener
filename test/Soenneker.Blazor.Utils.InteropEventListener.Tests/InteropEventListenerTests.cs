@@ -31,19 +31,4 @@ public class InteropEventListenerTests : HostedUnitTest
         await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask, cancellationToken: cancellationToken);
         interop.CallCount.Should().Be(2);
     }
-
-    private sealed class FailOnceInterop : IEventListeningInterop
-    {
-        public int CallCount { get; private set; }
-
-        public ValueTask AddEventListener(string functionName, string elementId, string eventName, object dotNetCallback,
-            CancellationToken cancellationToken = default)
-        {
-            CallCount++;
-
-            return CallCount == 1
-                ? ValueTask.FromException(new InvalidOperationException("Registration failed."))
-                : ValueTask.CompletedTask;
-        }
-    }
 }
