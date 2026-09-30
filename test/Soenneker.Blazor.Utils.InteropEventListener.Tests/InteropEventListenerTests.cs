@@ -19,7 +19,7 @@ public class InteropEventListenerTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Failed_registration_can_be_retried(CancellationToken cancellationToken)
+    public async ValueTask Failed_registration_can_be_retried(CancellationToken cancellationToken)
     {
         var interop = new FailOnceInterop();
         _util.Initialize(interop);
