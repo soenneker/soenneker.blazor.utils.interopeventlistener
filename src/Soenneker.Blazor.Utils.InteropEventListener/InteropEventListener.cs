@@ -1,4 +1,3 @@
-using Soenneker.Asyncs.Locks;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -17,8 +16,8 @@ namespace Soenneker.Blazor.Utils.InteropEventListener;
 internal sealed class InteropEventListener : IInteropEventListener
 {
     // Avoid string key allocations by using a structured key.
-    private readonly Dictionary<InteropKey, IDisposable> _dotNetObjectDict = new(InteropKeyComparer.Instance);
-    private readonly AsyncLock _sync = new();
+    private readonly Dictionary<InteropKey, IDisposable> _dotNetObjectDict = new();
+    private readonly Lock _sync = new();
 
     private IEventListeningInterop? _interop;
     private readonly ILogger<InteropEventListener> _logger;
@@ -33,7 +32,7 @@ internal sealed class InteropEventListener : IInteropEventListener
     {
         ArgumentNullException.ThrowIfNull(eventListeningInterop);
 
-        using (_sync.LockSync())
+        lock (_sync)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -51,16 +50,16 @@ internal sealed class InteropEventListener : IInteropEventListener
     public ValueTask Add<T>(string functionName, string elementId, string eventName, Func<T, ValueTask> callback, CancellationToken cancellationToken = default)
     {
         ValidateAddArguments(functionName, elementId, eventName, callback);
-        var dotNetObject = DotNetObjectReference.Create(new BlazorInvoker<T>(callback));
-        return AddCore(functionName, elementId, eventName, dotNetObject, cancellationToken);
+        return AddCore(functionName, elementId, eventName, callback,
+            static value => DotNetObjectReference.Create(new BlazorInvoker<T>(value)), cancellationToken);
     }
 
     public ValueTask Add<TInput, TOutput>(string functionName, string elementId, string eventName, Func<TInput, ValueTask<TOutput>> callback,
         CancellationToken cancellationToken = default)
     {
         ValidateAddArguments(functionName, elementId, eventName, callback);
-        var dotNetObject = DotNetObjectReference.Create(new BlazorOutputInvoker<TInput, TOutput>(callback));
-        return AddCore(functionName, elementId, eventName, dotNetObject, cancellationToken);
+        return AddCore(functionName, elementId, eventName, callback,
+            static value => DotNetObjectReference.Create(new BlazorOutputInvoker<TInput, TOutput>(value)), cancellationToken);
     }
 
     public void Remove(string elementId, string eventName)
@@ -71,7 +70,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         var key = new InteropKey(elementId, eventName);
         IDisposable? value;
 
-        using (_sync.LockSync())
+        lock (_sync)
             _dotNetObjectDict.Remove(key, out value);
 
         value?.Dispose();
@@ -82,7 +81,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         ArgumentException.ThrowIfNullOrWhiteSpace(elementId);
         List<IDisposable>? references = null;
 
-        using (_sync.LockSync())
+        lock (_sync)
         {
             if (_disposed)
                 return;
@@ -106,14 +105,14 @@ internal sealed class InteropEventListener : IInteropEventListener
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         List<IDisposable> references;
 
-        using (await _sync.Lock().ConfigureAwait(false))
+        lock (_sync)
         {
             if (_disposed)
-                return;
+                return ValueTask.CompletedTask;
 
             _disposed = true;
             references = [.. _dotNetObjectDict.Values];
@@ -122,23 +121,25 @@ internal sealed class InteropEventListener : IInteropEventListener
 
         foreach (IDisposable reference in references)
             reference.Dispose();
+
+        return ValueTask.CompletedTask;
     }
 
-    private async ValueTask AddCore(string functionName, string elementId, string eventName, IDisposable dotNetObject,
-        CancellationToken cancellationToken)
+    private async ValueTask AddCore<TCallback>(string functionName, string elementId, string eventName, TCallback callback,
+        Func<TCallback, IDisposable> createReference, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var key = new InteropKey(elementId, eventName);
         IEventListeningInterop interop;
+        IDisposable dotNetObject;
 
-        using (await _sync.Lock().ConfigureAwait(false))
+        lock (_sync)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             interop = _interop ?? throw new InvalidOperationException("Initialize must be called before adding listeners.");
 
-            if (!_dotNetObjectDict.TryAdd(key, dotNetObject))
+            if (_dotNetObjectDict.ContainsKey(key))
             {
-                dotNetObject.Dispose();
-
                 if (_logger.IsEnabled(LogLevel.Warning))
                 {
                     _logger.LogWarning(
@@ -148,7 +149,8 @@ internal sealed class InteropEventListener : IInteropEventListener
 
                 return;
             }
-
+            dotNetObject = createReference(callback);
+            _dotNetObjectDict.Add(key, dotNetObject);
         }
 
         try
@@ -159,7 +161,7 @@ internal sealed class InteropEventListener : IInteropEventListener
         {
             bool removed;
 
-            using (await _sync.Lock().ConfigureAwait(false))
+            lock (_sync)
             {
                 removed = _dotNetObjectDict.TryGetValue(key, out IDisposable? current) && ReferenceEquals(current, dotNetObject);
 

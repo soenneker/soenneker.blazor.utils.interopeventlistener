@@ -30,5 +30,11 @@ public class InteropEventListenerTests : HostedUnitTest
 
         await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask, cancellationToken: cancellationToken);
         interop.CallCount.Should().Be(2);
+
+        await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask, cancellationToken: cancellationToken);
+        interop.CallCount.Should().Be(2);
+        _util.Remove("target", "change");
+        await _util.Add<int>("events.add", "target", "change", _ => ValueTask.CompletedTask, cancellationToken: cancellationToken);
+        interop.CallCount.Should().Be(3);
     }
 }
